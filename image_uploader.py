@@ -1,31 +1,15 @@
 from pathlib import Path
 
-from config import TEST_IMAGE_FOLDER
 
+def upload_image(page, image_path):
 
-def get_test_image():
+    image = Path(image_path)
 
-    folder = Path(TEST_IMAGE_FOLDER)
+    if not image.exists():
 
-    if not folder.exists():
-        print(f"\n❌ Folder not found:\n{folder}")
-        return None
+        print(f"\n❌ Image not found:\n{image}")
 
-    images = []
-
-    for extension in ("*.jpg", "*.jpeg", "*.png", "*.webp"):
-        images.extend(folder.glob(extension))
-
-    if not images:
-        print("\n❌ No images found.")
-        return None
-
-    images.sort()
-
-    return images[0]
-
-
-def upload_image(page):
+        return False
 
     print("\nOpening 'Add New Image' tab...")
 
@@ -35,11 +19,6 @@ def upload_image(page):
     ).click()
 
     page.wait_for_timeout(1000)
-
-    image = get_test_image()
-
-    if image is None:
-        return False
 
     print(f"\nSelected image:\n{image}")
 
@@ -54,9 +33,9 @@ def upload_image(page):
     print("Clicking UPLOAD...")
 
     page.get_by_role(
-    "button",
-    name="UPLOAD",
-    exact=True
+        "button",
+        name="UPLOAD",
+        exact=True
     ).click()
 
     print("Waiting for upload...")

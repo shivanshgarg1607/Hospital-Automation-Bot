@@ -1,6 +1,7 @@
 from playwright.sync_api import sync_playwright
 from config import URL, USERNAME, PASSWORD
 from image_uploader import upload_image
+from image_finder import ImageFinder
 
 
 class AdminBot:
@@ -10,6 +11,7 @@ class AdminBot:
         self.browser = None
         self.context = None
         self.page = None
+        self.image_finder = ImageFinder()
 
     def launch_browser(self, headless=False):
         self.playwright = sync_playwright().start()
@@ -103,6 +105,35 @@ class AdminBot:
                 return hospital
 
         return None
+    
+    def go_to_next_page(self):
+
+        print("\nChecking for next page...")
+
+        next_button = self.page.locator(
+            "a.page-link",
+            has_text=">"
+        )
+
+        if next_button.count() == 0:
+
+            print("No next page.")
+
+            return False
+
+        if not next_button.first.is_visible():
+
+            print("Next button not visible.")
+
+            return False
+
+        print("Opening next page...")
+
+        next_button.first.click()
+
+        self.page.wait_for_load_state("networkidle")
+
+        return True
 
     def open_edit_page(self, hospital):
 
@@ -127,10 +158,58 @@ class AdminBot:
 
         print("✓ Image dialog opened.")
 
-    def upload_image(self):
+    def upload_image(self, hospital):
 
-        return upload_image(self.page)
+        image_path = self.image_finder.get_hospital_image(
+            hospital["name"]
+        )
 
+        if image_path is None:
+
+            print("No image selected.")
+
+            return False
+
+        return upload_image(
+            self.page,
+            image_path
+        )
+
+    def submit_hospital(self):
+
+        print("\n========== submit_hospital() CALLED ==========")
+
+        # input("Press ENTER to continue...")
+
+        print("Trying to find Submit button...")
+
+        submit_button = self.page.locator(
+            "button.btn.btn-raised.btn-primary.btn-round.waves-effect"
+        )
+
+        # print("Number of matching submit buttons:", submit_button.count())
+
+        submit_button.first.scroll_into_view_if_needed()
+
+        print("Scrolled.")
+
+        # input("Press ENTER before clicking Submit...")
+
+        submit_button.first.click(force=True)
+
+        print("Clicked Submit.")
+
+        self.page.wait_for_load_state("networkidle")
+
+        print("Hospital submitted.")
+
+        return True
+    
+    
+    
+    
+    
+    
     def close(self):
 
         if self.browser:

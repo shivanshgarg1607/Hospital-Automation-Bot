@@ -13,35 +13,53 @@ def main():
 
         bot.open_hospital_page()
 
-        hospital = bot.find_first_placeholder_hospital()
+        while True:
 
-        if hospital:
+            hospital = bot.find_first_placeholder_hospital()
 
+            if hospital:
+
+                print("\n" + "=" * 60)
+                print("Hospital Found")
+                print("=" * 60)
+
+                print(f"Name : {hospital['name']}")
+                print(f"Image: {hospital['image_src']}")
+
+                bot.open_edit_page(hospital)
+
+                bot.open_choose_image_modal()
+
+                success = bot.upload_image(hospital)
+
+                if success:
+
+                    print("\n✅ Image uploaded.")
+
+                    bot.submit_hospital()
+
+                    print("\nReturning to hospital list...")
+
+                    bot.open_hospital_page()
+
+                    continue
+
+            print("\nNo placeholder hospitals on this page.")
+
+            if bot.go_to_next_page():
+
+                continue
+
+            print("\n" + "=" * 60)
+            print("ALL PAGES COMPLETED")
             print("=" * 60)
-            print("Hospital Found")
-            print("=" * 60)
-            print(f"Name      : {hospital['name']}")
-            print(f"Image     : {hospital['image_src']}")
-            print(f"Edit URL  : {hospital['edit_url']}")
 
-            bot.open_edit_page(hospital)
+            break
 
-            bot.open_choose_image_modal()
-
-            success = bot.upload_image()
-
-            if success:
-                print("\n✅ Upload completed.")
-            else:
-                print("\n❌ Upload failed.")
-
-        else:
-
-            print("No hospitals require processing.")
+    finally:
 
         input("\nPress ENTER to close...")
 
-    finally:
         bot.close()
 
 
