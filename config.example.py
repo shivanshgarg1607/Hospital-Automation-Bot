@@ -1,0 +1,5 @@
+URL = "https://example.com"
+
+USERNAME = "YOUR_USERNAME"
+
+PASSWORD = "YOUR_PASSWORD"
