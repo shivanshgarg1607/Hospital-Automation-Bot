@@ -1,9 +1,12 @@
 from admin import AdminBot
+from missing_logger import log_missing_hospital
 
 
 def main():
 
     bot = AdminBot()
+
+    skipped_hospitals = set()
 
     try:
 
@@ -11,50 +14,75 @@ def main():
 
         bot.login()
 
-        bot.open_hospital_page()
+        start_page = int(
+            input("\nEnter starting page (1-143): ")
+        )
+
+
+        bot.open_hospital_page(start_page)
 
         while True:
 
-            hospital = bot.find_first_placeholder_hospital()
+            hospital = bot.find_first_placeholder_hospital(
+                skipped_hospitals
+            )
 
-            if hospital:
+            # ----------------------------------------
+            # No placeholders on current page
+            # ----------------------------------------
 
-                print("\n" + "=" * 60)
-                print("Hospital Found")
-                print("=" * 60)
+            if hospital is None:
 
-                print(f"Name : {hospital['name']}")
-                print(f"Image: {hospital['image_src']}")
+                print("\nNo placeholder hospitals on this page.")
 
-                bot.open_edit_page(hospital)
+                skipped_hospitals.clear()
 
-                bot.open_choose_image_modal()
-
-                success = bot.upload_image(hospital)
-
-                if success:
-
-                    print("\n✅ Image uploaded.")
-
-                    bot.submit_hospital()
-
-                    print("\nReturning to hospital list...")
-
-                    bot.open_hospital_page()
+                if bot.go_to_next_page():
 
                     continue
 
-            print("\nNo placeholder hospitals on this page.")
+                print("\n==============================")
+                print("ALL PAGES COMPLETED")
+                print("==============================")
 
-            if bot.go_to_next_page():
+                break
 
-                continue
+            print("\n==============================")
+            print("Hospital Found")
+            print("==============================")
 
-            print("\n" + "=" * 60)
-            print("ALL PAGES COMPLETED")
-            print("=" * 60)
+            print(f"Name : {hospital['name']}")
 
-            break
+            bot.open_edit_page(hospital)
+
+            bot.open_choose_image_modal()
+
+            success = bot.upload_image(hospital)
+
+            if success:
+
+                print("\nImage uploaded.")
+
+                bot.submit_hospital()
+
+            else:
+
+                print("\nNo suitable image found.")
+
+                log_missing_hospital(
+                    hospital["name"],
+                    "No suitable image found"
+                )
+
+                skipped_hospitals.add(
+                    hospital["name"]
+                )
+
+                bot.close_choose_image_modal()
+
+                bot.submit_hospital()
+
+        print("\nAutomation Complete.")
 
     finally:
 

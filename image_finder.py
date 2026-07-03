@@ -517,6 +517,7 @@
 import os
 import shutil
 import requests
+import re
 from pathlib import Path
 from urllib.parse import urljoin
 
@@ -651,6 +652,7 @@ class ImageFinder:
         for i, image in enumerate(best_images, start=1):
 
             print(f"{i}. {image}")
+            
 
         # ------------------------------------
         # Download candidates
@@ -1035,11 +1037,12 @@ class ImageFinder:
         for i, image in enumerate(downloaded, start=1):
 
             print(f"{i}. {image.name}")
+        print("6. None of these images are correct")    
 
         while True:
 
             choice = input(
-                "\nChoose image (1-5): "
+                "\nChoose image (1-6): "
             ).strip()
 
             if not choice.isdigit():
@@ -1049,6 +1052,14 @@ class ImageFinder:
                 continue
 
             choice = int(choice)
+
+            if choice == 6:
+
+                print("\nSkipping this hospital...")
+
+                shutil.rmtree(self.temp_folder)
+
+                return None
 
             if choice < 1 or choice > len(downloaded):
 

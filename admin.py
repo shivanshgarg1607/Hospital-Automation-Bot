@@ -43,17 +43,18 @@ class AdminBot:
 
         self.page.wait_for_load_state("networkidle")
 
-    def open_hospital_page(self):
+    def open_hospital_page(self, page=1):
 
-        self.page.get_by_role(
-            "link",
-            name="  Services Categories "
-        ).click()
+        offset = (page - 1) * 10
 
-        self.page.get_by_role(
-            "link",
-            name=" Hospital"
-        ).click()
+        url = (
+            "https://karunahealthlifepartner.com/"
+            f"Servicemodules/categoryitemSetting/1/{offset}"
+        )
+
+        print(f"\nOpening page {page}...")
+
+        self.page.goto(url)
 
         self.page.wait_for_load_state("networkidle")
 
@@ -86,7 +87,7 @@ class AdminBot:
             "row": row
         }
 
-    def find_first_placeholder_hospital(self):
+    def find_first_placeholder_hospital(self, skipped_hospitals):
 
         rows = self.get_hospital_rows()
 
@@ -97,6 +98,12 @@ class AdminBot:
             hospital = self.get_hospital_data(rows.nth(i))
 
             print(f"Checking: {hospital['name']}")
+
+            if hospital["name"] in skipped_hospitals:
+
+                print("Already skipped.")
+
+                continue
 
             if hospital["image_src"].endswith("hospital.jpg"):
 
@@ -110,30 +117,84 @@ class AdminBot:
 
         print("\nChecking for next page...")
 
-        next_button = self.page.locator(
-            "a.page-link",
-            has_text=">"
-        )
+        # Current active page number
+        active = self.page.locator("li.page-item.active a.page-link")
 
-        if next_button.count() == 0:
+        if active.count() == 0:
 
-            print("No next page.")
+            print("Could not determine current page.")
 
             return False
 
-        if not next_button.first.is_visible():
+        current_page = int(active.inner_text().strip())
 
-            print("Next button not visible.")
+        print(f"Current page: {current_page}")
 
-            return False
+        # Get ALL numbered page links
+        links = self.page.locator("li.page-item a.page-link")
 
-        print("Opening next page...")
+        total = links.count()
 
-        next_button.first.click()
+        best_link = None
+        best_number = None
 
-        self.page.wait_for_load_state("networkidle")
+        for i in range(total):
 
-        return True
+            text = links.nth(i).inner_text().strip()
+
+            if text.isdigit():
+
+                number = int(text)
+
+                if number > current_page:
+
+                    if best_number is None or number < best_number:
+
+                        best_number = number
+                        best_link = links.nth(i)
+
+        if best_link:
+
+            print(f"Opening page {best_number}...")
+
+            best_link.click()
+
+            self.page.wait_for_load_state("networkidle")
+
+            return True
+
+        print("No next page.")
+
+        return False
+    
+    # def go_to_next_page(self):
+
+    #     print("\nChecking for next page...")
+
+    #     next_button = self.page.locator(
+    #         "a.page-link",
+    #         has_text=">"
+    #     )
+
+    #     if next_button.count() == 0:
+
+    #         print("No next page.")
+
+    #         return False
+
+    #     if not next_button.first.is_visible():
+
+    #         print("Next button not visible.")
+
+    #         return False
+
+    #     print("Opening next page...")
+
+    #     next_button.first.click()
+
+    #     self.page.wait_for_load_state("networkidle")
+
+    #     return True
 
     def open_edit_page(self, hospital):
 
@@ -157,6 +218,16 @@ class AdminBot:
         self.page.wait_for_timeout(1000)
 
         print("✓ Image dialog opened.")
+
+    def close_choose_image_modal(self):
+
+        print("\nClosing image dialog...")
+
+        self.page.keyboard.press("Escape")
+
+        self.page.wait_for_timeout(500)
+
+        print("✓ Image dialog closed.")    
 
     def upload_image(self, hospital):
 
